@@ -70,23 +70,23 @@ const Layout: React.FC<LayoutProps> = ({
   };
 
   return (
-    <div className="flex h-screen bg-slate-100 dark:bg-slate-950 transition-colors duration-300 overflow-hidden">
+    <div className="flex h-screen bg-transparent transition-colors duration-300 overflow-hidden">
       {/* Mobile Backdrop */}
       {isSidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-40 md:hidden"
+          className="fixed inset-0 bg-black/40 backdrop-blur-[4px] z-40 md:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-r border-slate-200/50 dark:border-slate-800/50 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex flex-col h-full">
           <div className="p-6 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
                 <TrendingUp className="text-white" size={24} />
               </div>
-              <h1 className="text-xl font-bold text-slate-800 dark:text-white">FinWise</h1>
+              <h1 className="text-xl font-black text-slate-800 dark:text-white tracking-tight">FinWise</h1>
             </div>
             {/* Mobile Close Button inside Sidebar */}
             <button 
@@ -102,7 +102,7 @@ const Layout: React.FC<LayoutProps> = ({
               <button
                 key={item.id}
                 onClick={() => handleModuleSelection(item.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all ${activeModule === item.id ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 font-bold shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium'}`}
+                className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all ${activeModule === item.id ? 'bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-500/30' : 'text-slate-600 dark:text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 font-medium'}`}
               >
                 <item.icon size={20} strokeWidth={activeModule === item.id ? 2.5 : 2} />
                 <span>{item.label}</span>
@@ -110,8 +110,8 @@ const Layout: React.FC<LayoutProps> = ({
             ))}
           </nav>
 
-          <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-3">
-             <div className="flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+          <div className="p-4 border-t border-slate-100 dark:border-slate-800/50 space-y-3">
+             <div className="flex items-center justify-between px-3 py-2 bg-slate-100/50 dark:bg-slate-800/30 rounded-xl">
                 <div className="flex gap-1">
                   <button onClick={() => onAdjustFontSize(-10)} className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded transition-colors text-slate-600 dark:text-slate-400" title="Decrease Font">
                     <Type size={14} />
@@ -132,8 +132,8 @@ const Layout: React.FC<LayoutProps> = ({
                 </button>
               </div>
 
-              <div className="bg-slate-900 dark:bg-indigo-900/40 rounded-2xl p-4 text-white">
-                <p className="text-[10px] text-indigo-300 uppercase font-black tracking-widest mb-1">Financial Intelligence</p>
+              <div className="bg-slate-900 dark:bg-indigo-600 rounded-2xl p-4 text-white shadow-lg">
+                <p className="text-[10px] text-indigo-300 dark:text-indigo-100 uppercase font-black tracking-widest mb-1 opacity-80">Intelligence Suite</p>
                 <p className="text-sm font-bold">FinWise Pro v1.2</p>
               </div>
           </div>
@@ -141,7 +141,7 @@ const Layout: React.FC<LayoutProps> = ({
       </aside>
 
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-        <header className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 transition-colors">
+        <header className="flex items-center justify-between p-4 bg-white/70 dark:bg-slate-900/50 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-800/50 sticky top-0 z-30 transition-colors">
           <div className="flex items-center gap-2">
             <button 
               onClick={() => setSidebarOpen(true)} 
@@ -150,21 +150,21 @@ const Layout: React.FC<LayoutProps> = ({
               <Menu size={24} />
             </button>
             <div className="flex items-center gap-2">
-               <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+               <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center shadow-md">
                 <TrendingUp className="text-white" size={18} />
               </div>
-              <span className="font-bold text-slate-800 dark:text-white">FinWise</span>
+              <span className="font-black text-slate-800 dark:text-white tracking-tight">FinWise</span>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
             <button 
               onClick={() => setComparisonOpen(true)}
-              className="relative p-2.5 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all"
+              className="relative p-2.5 text-slate-600 dark:text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-xl transition-all"
             >
               <Layers size={22} />
               {savedScenarios.length > 0 && (
-                <span className="absolute top-1 right-1 w-4 h-4 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                <span className="absolute top-1 right-1 w-4 h-4 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center ring-2 ring-white dark:ring-slate-900">
                   {savedScenarios.length}
                 </span>
               )}
@@ -179,9 +179,9 @@ const Layout: React.FC<LayoutProps> = ({
         {isComparisonOpen && (
           <>
             <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60]" onClick={() => setComparisonOpen(false)} />
-            <div className="fixed inset-y-0 right-0 w-full max-w-md bg-white dark:bg-slate-900 z-[70] shadow-2xl flex flex-col transform transition-transform animate-in slide-in-from-right duration-300">
-              <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                <h3 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+            <div className="fixed inset-y-0 right-0 w-full max-w-md bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl z-[70] shadow-2xl flex flex-col transform transition-transform animate-in slide-in-from-right duration-300">
+              <div className="p-6 border-b border-slate-100 dark:border-slate-800/50 flex items-center justify-between">
+                <h3 className="text-xl font-black text-slate-800 dark:text-white flex items-center gap-2 tracking-tight">
                   <Layers size={20} className="text-indigo-600" />
                   Comparison Board
                 </h3>
@@ -193,7 +193,7 @@ const Layout: React.FC<LayoutProps> = ({
               <div className="flex-1 overflow-y-auto p-6 space-y-6">
                 {savedScenarios.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
-                    <div className="p-4 bg-slate-100 dark:bg-slate-800 rounded-full text-slate-400">
+                    <div className="p-5 bg-slate-100 dark:bg-slate-800 rounded-3xl text-slate-300 dark:text-slate-600">
                       <Layers size={48} />
                     </div>
                     <div>
@@ -203,7 +203,7 @@ const Layout: React.FC<LayoutProps> = ({
                   </div>
                 ) : (
                   savedScenarios.map((scenario) => (
-                    <div key={scenario.id} className="p-5 bg-slate-100 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 relative group shadow-sm">
+                    <div key={scenario.id} className="p-5 bg-white/50 dark:bg-white/5 rounded-2xl border border-slate-200/50 dark:border-slate-700/50 relative group shadow-sm backdrop-blur-sm">
                       <button 
                         onClick={() => onRemoveScenario(scenario.id)}
                         className="absolute top-4 right-4 p-2 text-slate-400 hover:text-rose-500 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity"
@@ -216,7 +216,7 @@ const Layout: React.FC<LayoutProps> = ({
                       <h4 className="font-black text-slate-900 dark:text-white mb-3 text-base">{scenario.title}</h4>
                       <div className="grid grid-cols-2 gap-3">
                         {scenario.summary.map((s, idx) => (
-                          <div key={idx} className="bg-white dark:bg-slate-900/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
+                          <div key={idx} className="bg-white/50 dark:bg-slate-950/50 p-3 rounded-xl border border-slate-200/50 dark:border-slate-700/50">
                             <p className="text-[9px] text-slate-500 dark:text-slate-400 uppercase font-black tracking-tight mb-0.5">{s.label}</p>
                             <p className="text-sm font-black text-slate-900 dark:text-white">{s.value}</p>
                           </div>
