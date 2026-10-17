@@ -1,8 +1,7 @@
-
 import React, { useState, useMemo } from 'react';
 import { Card, InputGroup, StatBox } from '../components/Shared';
 import { calculateAffordability, formatCurrency } from '../utils/finance';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Landmark, ShieldCheck } from 'lucide-react';
 
 const AffordabilityModule: React.FC = () => {
   const [income, setIncome] = useState(150000);
@@ -13,42 +12,115 @@ const AffordabilityModule: React.FC = () => {
   const results = useMemo(() => calculateAffordability(income, existingEMI, rate, tenure), [income, existingEMI, rate, tenure]);
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="space-y-6">
-          <Card title="Financial Profile">
-            <div className="space-y-6">
-              <InputGroup label="Monthly Take-home Income" value={income} onChange={setIncome} min={10000} max={2000000} step={5000} prefix="₹" />
-              <InputGroup label="Existing Monthly EMIs" value={existingEMI} onChange={setExistingEMI} min={0} max={500000} step={1000} prefix="₹" />
-              <InputGroup label="Home Loan Rate (p.a)" value={rate} onChange={setRate} min={5} max={15} step={0.1} suffix="%" />
-              <InputGroup label="Loan Tenure (Years)" value={tenure} onChange={setTenure} min={1} max={30} step={1} suffix=" Years" />
-            </div>
-          </Card>
-          
-          <div className="p-4 bg-amber-50 rounded-xl border border-amber-100 flex items-start gap-4">
-            <div className="p-2 bg-amber-100 rounded text-amber-600 mt-1">
-              <AlertCircle size={20} />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-amber-800">Note on Banks' Limit</p>
-              <p className="text-xs text-amber-700 leading-relaxed mt-1">Most lenders limit total EMIs (FOIR) to 45-50% of your net monthly income. Our calculator uses a conservative 45% threshold.</p>
-            </div>
+    <div className="space-y-3.5 max-w-7xl mx-auto pb-4">
+      {/* Top Hero and Key Stat Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="sm:col-span-2 p-3.5 bg-gradient-to-r from-slate-900 to-indigo-950 dark:from-slate-900 dark:to-slate-950 rounded-xl border border-slate-800 text-white flex items-center justify-between shadow-xs">
+          <div>
+            <p className="text-[10px] font-bold text-indigo-300 uppercase tracking-wider">Max Home Loan Affordability</p>
+            <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-white mt-0.5">{formatCurrency(results.maxLoan)}</h3>
+            <p className="text-[10px] text-slate-400 mt-0.5">
+              Eligible loan principal based on 45% FOIR banking benchmark
+            </p>
+          </div>
+          <div className="hidden sm:block p-2.5 bg-white/10 rounded-xl backdrop-blur-md">
+            <Landmark size={24} className="text-indigo-400" />
           </div>
         </div>
 
-        <div className="flex flex-col justify-center space-y-8">
-          <div className="text-center p-8 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
-            <p className="text-sm font-medium text-slate-500 uppercase tracking-widest mb-2">Max Loan Affordability</p>
-            <h3 className="text-5xl md:text-6xl font-black text-indigo-600 mb-4">{formatCurrency(results.maxLoan)}</h3>
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400 rounded-full text-xs font-bold uppercase tracking-wide">
-              Safe EMI Limit: {formatCurrency(results.maxEMI)}/mo
+        <StatBox 
+          label="Safe Maximum EMI" 
+          value={`${formatCurrency(results.maxEMI)}/mo`} 
+          subValue="45% of net income ceiling"
+          colorClass="text-emerald-600 dark:text-emerald-400"
+          icon={<ShieldCheck size={16} />}
+        />
+
+        <StatBox 
+          label="Debt-to-Income (FOIR)" 
+          value={`${(( (existingEMI + results.maxEMI) / income) * 100).toFixed(0)}%`} 
+          subValue={`Existing EMIs: ${formatCurrency(existingEMI)}`}
+          colorClass="text-indigo-600 dark:text-indigo-400"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5">
+        <div className="lg:col-span-7 space-y-3">
+          <Card title="Financial Profile">
+            <div className="space-y-3">
+              <InputGroup 
+                label="Monthly Take-home Income" 
+                value={income} 
+                onChange={setIncome} 
+                min={10000} 
+                max={2000000} 
+                step={5000} 
+                prefix="₹" 
+                presets={[75000, 100000, 150000, 250000]}
+              />
+              <InputGroup 
+                label="Existing Monthly EMIs" 
+                value={existingEMI} 
+                onChange={setExistingEMI} 
+                min={0} 
+                max={500000} 
+                step={1000} 
+                prefix="₹" 
+                presets={[0, 15000, 30000, 50000]}
+              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <InputGroup 
+                  label="Loan Rate (p.a)" 
+                  value={rate} 
+                  onChange={setRate} 
+                  min={5} 
+                  max={15} 
+                  step={0.1} 
+                  suffix="%" 
+                  presets={[8.25, 8.5, 9.0]}
+                />
+                <InputGroup 
+                  label="Loan Tenure" 
+                  value={tenure} 
+                  onChange={setTenure} 
+                  min={1} 
+                  max={30} 
+                  step={1} 
+                  suffix=" Years" 
+                  presets={[15, 20, 25, 30]}
+                />
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        <div className="lg:col-span-5 space-y-3">
+          <div className="p-3 bg-amber-50/80 dark:bg-amber-950/20 rounded-xl border border-amber-200/60 dark:border-amber-900/40 flex items-start gap-2.5">
+            <AlertCircle size={16} className="text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs font-bold text-amber-800 dark:text-amber-200">How Banks Calculate Loan Eligibility</p>
+              <p className="text-[11px] text-amber-700 dark:text-amber-300 leading-relaxed mt-1">
+                Indian lenders strictly enforce the Fixed Obligation to Income Ratio (FOIR). Any existing vehicle, personal, or credit card EMIs reduce your eligible home loan borrowing power directly rupee-for-rupee.
+              </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <StatBox label="Monthly Income" value={formatCurrency(income)} />
-            <StatBox label="Debt-to-Income" value={`${(( (existingEMI + results.maxEMI) / income) * 100).toFixed(0)}%`} colorClass="text-indigo-500" />
-          </div>
+          <Card title="Income Utilization">
+            <div className="space-y-2 text-xs">
+              <div className="flex justify-between items-center py-1 border-b border-slate-100 dark:border-slate-800">
+                <span className="text-slate-500">Gross Monthly Inflow:</span>
+                <span className="font-bold text-slate-900 dark:text-white">{formatCurrency(income)}</span>
+              </div>
+              <div className="flex justify-between items-center py-1 border-b border-slate-100 dark:border-slate-800">
+                <span className="text-slate-500">Current Fixed EMIs:</span>
+                <span className="font-bold text-rose-500">{formatCurrency(existingEMI)}</span>
+              </div>
+              <div className="flex justify-between items-center py-1">
+                <span className="text-slate-500">Available for New Home EMI:</span>
+                <span className="font-black text-emerald-600 dark:text-emerald-400">{formatCurrency(results.maxEMI)}</span>
+              </div>
+            </div>
+          </Card>
         </div>
       </div>
     </div>

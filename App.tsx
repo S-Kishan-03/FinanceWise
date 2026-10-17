@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Layout from './components/Layout';
 import { ModuleType, Theme, SavedScenario } from './types';
@@ -15,7 +14,15 @@ import AssetAllocationModule from './modules/AssetAllocationModule';
 import FIREModule from './modules/FIREModule';
 
 const App: React.FC = () => {
-  const [activeModule, setActiveModule] = useState<ModuleType>(ModuleType.SIP);
+  const [activeModule, setActiveModuleState] = useState<ModuleType>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('finwise_active_module') as ModuleType;
+      if (saved && Object.values(ModuleType).includes(saved)) {
+        return saved;
+      }
+    }
+    return ModuleType.HOME_LOAN;
+  });
   
   const [theme, setTheme] = useState<Theme>(() => {
     if (typeof window !== 'undefined') {
@@ -33,7 +40,22 @@ const App: React.FC = () => {
     return 100;
   });
 
-  const [savedScenarios, setSavedScenarios] = useState<SavedScenario[]>([]);
+  const [savedScenarios, setSavedScenarios] = useState<SavedScenario[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('finwise_saved_scenarios');
+        if (saved) return JSON.parse(saved);
+      } catch (e) {
+        console.error('Failed to parse saved scenarios', e);
+      }
+    }
+    return [];
+  });
+
+  const setActiveModule = (mod: ModuleType) => {
+    setActiveModuleState(mod);
+    localStorage.setItem('finwise_active_module', mod);
+  };
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -50,6 +72,14 @@ const App: React.FC = () => {
     root.style.fontSize = `${fontSize}%`;
     localStorage.setItem('fontSize', fontSize.toString());
   }, [fontSize]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('finwise_saved_scenarios', JSON.stringify(savedScenarios));
+    } catch (e) {
+      console.error('Failed to save scenarios', e);
+    }
+  }, [savedScenarios]);
 
   const toggleTheme = () => setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
 
@@ -77,23 +107,23 @@ const App: React.FC = () => {
     switch (activeModule) {
       case ModuleType.HOME_LOAN: return <HomeLoanModule {...props} />;
       case ModuleType.SIP: return <SIPModule {...props} />;
-      case ModuleType.GOAL_PLANNER: return <GoalPlannerModule />;
+      case ModuleType.GOAL_PLANNER: return <GoalPlannerModule {...props} />;
       case ModuleType.LUMPSUM: return <LumpsumModule />;
       case ModuleType.FD_RD: return <FD_RDModule />;
       case ModuleType.PPF_EPF: return <PPF_EPFModule />;
-      case ModuleType.RENT_VS_BUY: return <RentVsBuyModule />;
+      case ModuleType.RENT_VS_BUY: return <RentVsBuyModule {...props} />;
       case ModuleType.AFFordABILITY: return <AffordabilityModule />;
       case ModuleType.BUDGET_PLANNER: return <BudgetPlannerModule />;
       case ModuleType.ASSET_ALLOCATION: return <AssetAllocationModule />;
-      case ModuleType.FIRE_CALC: return <FIREModule />;
-      default: return <SIPModule {...props} />;
+      case ModuleType.FIRE_CALC: return <FIREModule {...props} />;
+      default: return <HomeLoanModule {...props} />;
     }
   };
 
   const getModuleTitle = () => {
     switch (activeModule) {
-      case ModuleType.HOME_LOAN: return "Home Loan EMI Calculator";
-      case ModuleType.SIP: return "SIP Investment Returns";
+      case ModuleType.HOME_LOAN: return "Home Loan EMI & Prepayment Calculator";
+      case ModuleType.SIP: return "SIP Investment Returns (Step-Up)";
       case ModuleType.GOAL_PLANNER: return "Financial Goal Planner";
       case ModuleType.LUMPSUM: return "Lumpsum Investment Projection";
       case ModuleType.FD_RD: return "Fixed & Recurring Deposit";
@@ -119,9 +149,11 @@ const App: React.FC = () => {
       savedScenarios={savedScenarios}
       onRemoveScenario={removeScenario}
     >
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold text-slate-900 dark:text-white transition-colors">{getModuleTitle()}</h2>
-        <p className="text-slate-500 dark:text-slate-400 mt-1 transition-colors">Strategic financial planning made simple.</p>
+      <div className="mb-3 md:mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 border-b border-slate-200/50 dark:border-slate-800/50 pb-2">
+        <div>
+          <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight">{getModuleTitle()}</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Strategic financial planning made simple with Indian market intelligence.</p>
+        </div>
       </div>
       {renderModule()}
     </Layout>

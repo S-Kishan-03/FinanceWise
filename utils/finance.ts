@@ -7,6 +7,33 @@ export const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
+export const formatIndianWord = (amount: number): string => {
+  if (!amount || isNaN(amount) || amount === 0) return '₹0';
+  if (amount >= 10000000) {
+    const cr = amount / 10000000;
+    return `${cr % 1 === 0 ? cr : cr.toFixed(2)} Crore${cr > 1 ? 's' : ''}`;
+  }
+  if (amount >= 100000) {
+    const l = amount / 100000;
+    return `${l % 1 === 0 ? l : l.toFixed(2)} Lakh${l > 1 ? 's' : ''}`;
+  }
+  if (amount >= 1000) {
+    const k = amount / 1000;
+    return `${k % 1 === 0 ? k : k.toFixed(1)}k`;
+  }
+  return `₹${amount.toLocaleString('en-IN')}`;
+};
+
+export interface YearlyAmortization {
+  year: number;
+  openingBalance: number;
+  principalPaid: number;
+  interestPaid: number;
+  totalPaid: number;
+  closingBalance: number;
+}
+
+
 export const calculateEMI = (principal: number, annualRate: number, tenureYears: number) => {
   const monthlyRate = annualRate / 12 / 100;
   const months = tenureYears * 12;
@@ -66,6 +93,92 @@ export const calculatePrepaymentImpact = (
     totalPaymentWithPrepayment: principal + totalInterestPaid
   };
 };
+
+export const generateAmortizationSchedule = (
+  principal: number,
+  annualRate: number,
+  tenureYears: number,
+  monthlyPrepayment: number = 0,
+  lumpsumAmount: number = 0,
+  lumpsumMonth: number = 1
+): YearlyAmortization[] => {
+  const monthlyRate = annualRate / 12 / 100;
+  const originalMonths = tenureYears * 12;
+  const emi = (principal * monthlyRate * Math.pow(1 + monthlyRate, originalMonths)) / (Math.pow(1 + monthlyRate, originalMonths) - 1);
+
+  let balance = principal;
+  let currentMonth = 0;
+  const schedule: YearlyAmortization[] = [];
+
+  let yearlyOpening = balance;
+  let yearlyPrincipalPaid = 0;
+  let yearlyInterestPaid = 0;
+
+  while (balance > 0 && currentMonth < originalMonths) {
+    currentMonth++;
+    const interestForMonth = balance * monthlyRate;
+    let principalForMonth = emi - interestForMonth;
+
+    if (principalForMonth > balance) {
+      principalForMonth = balance;
+    }
+
+    balance -= principalForMonth;
+    yearlyInterestPaid += interestForMonth;
+    yearlyPrincipalPaid += principalForMonth;
+
+    // Apply monthly prepayment
+    if (balance > 0 && monthlyPrepayment > 0) {
+      const extra = Math.min(balance, monthlyPrepayment);
+      balance -= extra;
+      yearlyPrincipalPaid += extra;
+    }
+
+    // Apply lumpsum prepayment
+    if (currentMonth === lumpsumMonth && balance > 0 && lumpsumAmount > 0) {
+      const extra = Math.min(balance, lumpsumAmount);
+      balance -= extra;
+      yearlyPrincipalPaid += extra;
+    }
+
+    if (balance < 0) balance = 0;
+
+    // At end of 12 months or if loan is fully paid off
+    if (currentMonth % 12 === 0 || balance === 0) {
+      schedule.push({
+        year: Math.ceil(currentMonth / 12),
+        openingBalance: Math.round(yearlyOpening),
+        principalPaid: Math.round(yearlyPrincipalPaid),
+        interestPaid: Math.round(yearlyInterestPaid),
+        totalPaid: Math.round(yearlyPrincipalPaid + yearlyInterestPaid),
+        closingBalance: Math.round(balance),
+      });
+
+      yearlyOpening = balance;
+      yearlyPrincipalPaid = 0;
+      yearlyInterestPaid = 0;
+    }
+  }
+
+  return schedule;
+};
+
+export const downloadCSV = (filename: string, headers: string[], rows: (string | number)[][]) => {
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(row => row.map(val => `"${val}"`).join(','))
+  ].join('\n');
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
 
 export const calculateSIP = (monthlyInvestment: number, annualRate: number, years: number, stepUp: number = 0) => {
   const monthlyRate = annualRate / 12 / 100;

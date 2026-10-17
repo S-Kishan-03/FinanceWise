@@ -1,8 +1,8 @@
-
 import React, { useState } from 'react';
 import { Card, InputGroup, StatBox } from '../components/Shared';
 import { calculateLumpsum, formatCurrency } from '../utils/finance';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { Coins, TrendingUp, Landmark } from 'lucide-react';
 
 const LumpsumModule: React.FC = () => {
   const [amount, setAmount] = useState(100000);
@@ -13,37 +13,69 @@ const LumpsumModule: React.FC = () => {
 
   const data = [
     { name: 'Invested', value: totalInvested, color: '#94a3b8' },
-    { name: 'Gains', value: wealthGain, color: '#10b981' },
-    { name: 'Total', value: totalValue, color: '#6366f1' },
+    { name: 'Wealth Gain', value: wealthGain, color: '#10b981' },
+    { name: 'Final Total', value: totalValue, color: '#6366f1' },
   ];
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <Card title="Investment Details">
-          <div className="space-y-8">
-            <InputGroup label="Lumpsum Amount" value={amount} onChange={setAmount} min={5000} max={10000000} step={5000} prefix="₹" />
-            <InputGroup label="Expected Return (p.a)" value={rate} onChange={setRate} min={1} max={30} step={0.5} suffix="%" />
-            <InputGroup label="Duration" value={years} onChange={setYears} min={1} max={40} step={1} suffix=" Years" />
-          </div>
-        </Card>
+    <div className="space-y-3.5 max-w-7xl mx-auto pb-4">
+      {/* Top Stat Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <StatBox label="Principal Invested" value={formatCurrency(totalInvested)} icon={<Coins size={16} />} />
+        <StatBox label="Wealth Gain" value={formatCurrency(wealthGain)} colorClass="text-emerald-500" icon={<TrendingUp size={16} />} />
+        <StatBox label="Maturity Value" value={formatCurrency(totalValue)} colorClass="text-indigo-600 dark:text-indigo-400" icon={<Landmark size={16} />} />
+      </div>
 
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <StatBox label="Invested Amount" value={formatCurrency(totalInvested)} />
-            <StatBox label="Wealth Gain" value={formatCurrency(wealthGain)} colorClass="text-emerald-500" />
-            <StatBox label="Maturity Amount" value={formatCurrency(totalValue)} colorClass="text-indigo-600" />
-          </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5">
+        <div className="lg:col-span-5 space-y-3">
+          <Card title="Investment Details">
+            <div className="space-y-3">
+              <InputGroup 
+                label="Lumpsum Amount" 
+                value={amount} 
+                onChange={setAmount} 
+                min={5000} 
+                max={10000000} 
+                step={5000} 
+                prefix="₹" 
+                presets={[50000, 100000, 250000, 500000]}
+              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <InputGroup 
+                  label="CAGR (p.a)" 
+                  value={rate} 
+                  onChange={setRate} 
+                  min={1} 
+                  max={30} 
+                  step={0.5} 
+                  suffix="%" 
+                  presets={[10, 12, 14]}
+                />
+                <InputGroup 
+                  label="Duration" 
+                  value={years} 
+                  onChange={setYears} 
+                  min={1} 
+                  max={40} 
+                  step={1} 
+                  suffix=" Yrs" 
+                  presets={[3, 5, 10, 15]}
+                />
+              </div>
+            </div>
+          </Card>
+        </div>
 
-          <Card title="Projection Analysis">
-            <div className="h-64 w-full">
+        <div className="lg:col-span-7">
+          <Card title="Return Breakdown">
+            <div className="h-56 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                  <YAxis axisLine={false} tickLine={false} tickFormatter={(val) => `₹${(val / 1000).toFixed(0)}k`} />
-                  <Tooltip formatter={(val: number) => formatCurrency(val)} />
-                  <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+                <BarChart data={data} margin={{ top: 10, right: 15, left: -10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" className="dark:opacity-10" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11 }} />
+                  <YAxis axisLine={false} tickLine={false} tickFormatter={(val) => `₹${(val / 100000).toFixed(0)}L`} tick={{ fontSize: 10 }} />
+                  <Tooltip formatter={(val: number) => formatCurrency(val)} contentStyle={{ fontSize: '11px', borderRadius: '8px' }} />
+                  <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={42}>
                     {data.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}

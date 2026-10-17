@@ -1,7 +1,6 @@
-
 import React, { useState, useMemo } from 'react';
 import { Card, InputGroup, StatBox } from '../components/Shared';
-import { calculateRentVsBuy, formatCurrency } from '../utils/finance';
+import { calculateRentVsBuy, formatCurrency, downloadCSV } from '../utils/finance';
 import { 
   LineChart, 
   Line, 
@@ -13,9 +12,14 @@ import {
   Legend,
   ReferenceLine
 } from 'recharts';
-import { Info, TrendingUp, Home, ArrowRightLeft } from 'lucide-react';
+import { Info, TrendingUp, Home, ArrowRightLeft, Download } from 'lucide-react';
+import { ModuleType } from '../types';
 
-const RentVsBuyModule: React.FC = () => {
+interface RentVsBuyModuleProps {
+  onSaveScenario?: (scenario: any) => void;
+}
+
+const RentVsBuyModule: React.FC<RentVsBuyModuleProps> = ({ onSaveScenario }) => {
   const [propertyPrice, setPropertyPrice] = useState(8000000);
   const [downPayment, setDownPayment] = useState(1600000);
   const [loanRate, setLoanRate] = useState(8.5);
@@ -36,7 +40,6 @@ const RentVsBuyModule: React.FC = () => {
     investmentReturn
   ), [propertyPrice, downPayment, loanRate, tenure, monthlyRent, rentAppreciation, appreciation, investmentReturn]);
 
-  // Generate trajectory data for the chart (0 to 30 years)
   const trajectoryData = useMemo(() => {
     const years = [0, 5, 10, 15, 20, 25, 30];
     return years.map(y => {
@@ -44,14 +47,14 @@ const RentVsBuyModule: React.FC = () => {
         propertyPrice,
         downPayment,
         loanRate,
-        y || 1, // at least 1 year for calc
+        y || 1,
         monthlyRent,
         rentAppreciation,
         appreciation,
         investmentReturn
       );
       return {
-        year: `Year ${y}`,
+        year: `Yr ${y}`,
         buyNetWorth: y === 0 ? downPayment : res.netWorthBuy,
         rentNetWorth: y === 0 ? downPayment : res.netWorthRent,
       };
@@ -66,124 +69,183 @@ const RentVsBuyModule: React.FC = () => {
     return null;
   }, [propertyPrice, downPayment, loanRate, monthlyRent, rentAppreciation, appreciation, investmentReturn]);
 
+  const handleSave = () => {
+    if (onSaveScenario) {
+      onSaveScenario({
+        moduleType: ModuleType.RENT_VS_BUY,
+        title: `Property ${formatCurrency(propertyPrice)} vs Rent ${formatCurrency(monthlyRent)}`,
+        data: { propertyPrice, downPayment, loanRate, tenure, monthlyRent },
+        summary: [
+          { label: 'Winner', value: results.netWorthBuy > results.netWorthRent ? 'Buying' : 'Renting' },
+          { label: 'Buy Net Worth', value: formatCurrency(results.netWorthBuy) },
+          { label: 'Rent Net Worth', value: formatCurrency(results.netWorthRent) },
+          { label: 'Break-even', value: breakEvenYear ? `Year ${breakEvenYear}` : '30+ Years' }
+        ]
+      });
+    }
+  };
+
+  const handleExportCSV = () => {
+    const headers = ['Timeline', 'Buy Net Worth (₹)', 'Rent Net Worth (₹)'];
+    const rows = trajectoryData.map(d => [
+      d.year,
+      Math.round(d.buyNetWorth),
+      Math.round(d.rentNetWorth)
+    ]);
+    downloadCSV(`FinWise_RentVsBuy_${propertyPrice}_vs_Rent_${monthlyRent}.csv`, headers, rows);
+  };
+
   return (
-    <div className="space-y-8 max-w-6xl mx-auto pb-12">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left: Inputs */}
-        <div className="lg:col-span-1 space-y-6">
+    <div className="space-y-3.5 max-w-7xl mx-auto pb-4">
+      {/* Top Stat Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatBox 
+          label={`Net Worth (Buying) - Yr ${tenure}`} 
+          value={formatCurrency(results.netWorthBuy)} 
+          colorClass="text-indigo-600 dark:text-indigo-400" 
+          subValue={`Asset value: ${formatCurrency(results.finalPropertyValue)}`}
+          icon={<Home size={16} />}
+        />
+        <StatBox 
+          label={`Net Worth (Renting) - Yr ${tenure}`} 
+          value={formatCurrency(results.netWorthRent)} 
+          colorClass="text-rose-500 dark:text-rose-400" 
+          subValue="Invested down payment + monthly savings"
+          icon={<ArrowRightLeft size={16} />}
+        />
+        <div className={`p-3 rounded-xl border flex flex-col justify-between ${results.netWorthBuy > results.netWorthRent ? 'bg-indigo-50/70 border-indigo-200/60 dark:bg-indigo-950/20 dark:border-indigo-900/40' : 'bg-rose-50/70 border-rose-200/60 dark:bg-rose-950/20 dark:border-rose-900/40'}`}>
+          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Decision Winner</p>
+          <p className="text-lg font-black text-slate-900 dark:text-white mt-0.5">
+            {results.netWorthBuy > results.netWorthRent ? 'Buying Property' : 'Renting + Investing'}
+          </p>
+          <p className="text-[10px] text-slate-500 font-medium">
+            Higher by {formatCurrency(Math.abs(results.netWorthBuy - results.netWorthRent))}
+          </p>
+        </div>
+        <div className="p-3 bg-emerald-50/70 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-900/40 rounded-xl flex flex-col justify-between">
+          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Break-Even Milestone</p>
+          <p className="text-lg font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
+            {breakEvenYear ? `Year ${breakEvenYear}` : "30+ Years (Rent Wins)"}
+          </p>
+          <p className="text-[10px] text-slate-500 font-medium truncate">
+            {breakEvenYear ? 'When buying overtakes rent' : 'Renting stays more profitable'}
+          </p>
+        </div>
+      </div>
+
+      {/* Main Grid: Inputs on Left, Chart on Right */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5">
+        <div className="lg:col-span-5 space-y-3">
           <Card title="Buy Scenario">
-            <div className="space-y-5">
-              <InputGroup label="Property Price" value={propertyPrice} onChange={setPropertyPrice} min={1000000} max={100000000} step={100000} prefix="₹" />
-              <InputGroup label="Down Payment" value={downPayment} onChange={setDownPayment} min={100000} max={50000000} step={100000} prefix="₹" />
-              <InputGroup label="Property Appreciation (p.a)" value={appreciation} onChange={setAppreciation} min={1} max={15} step={0.5} suffix="%" />
-              <InputGroup label="Loan Rate" value={loanRate} onChange={setLoanRate} min={5} max={15} step={0.1} suffix="%" />
+            <div className="space-y-2.5">
+              <InputGroup 
+                label="Property Price" 
+                value={propertyPrice} 
+                onChange={setPropertyPrice} 
+                min={1000000} 
+                max={50000000} 
+                step={100000} 
+                prefix="₹" 
+                presets={[5000000, 7500000, 10000000]}
+              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <InputGroup 
+                  label="Down Payment" 
+                  value={downPayment} 
+                  onChange={setDownPayment} 
+                  min={100000} 
+                  max={25000000} 
+                  step={100000} 
+                  prefix="₹" 
+                  presets={[1000000, 2000000]}
+                />
+                <InputGroup label="Appreciation (p.a)" value={appreciation} onChange={setAppreciation} min={1} max={15} step={0.5} suffix="%" />
+              </div>
             </div>
           </Card>
           
           <Card title="Rent Scenario">
-            <div className="space-y-5">
-              <InputGroup label="Monthly Rent" value={monthlyRent} onChange={setMonthlyRent} min={5000} max={500000} step={1000} prefix="₹" />
-              <InputGroup label="Yearly Rent Increase" value={rentAppreciation} onChange={setRentAppreciation} min={0} max={20} step={0.5} suffix="%" />
-              <InputGroup label="Saved Diff. Return" value={investmentReturn} onChange={setInvestmentReturn} min={1} max={25} step={0.5} suffix="%" />
+            <div className="space-y-2.5">
+              <InputGroup 
+                label="Monthly Rent" 
+                value={monthlyRent} 
+                onChange={setMonthlyRent} 
+                min={5000} 
+                max={500000} 
+                step={1000} 
+                prefix="₹" 
+                presets={[15000, 25000, 35000]}
+              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <InputGroup label="Rent Hike %" value={rentAppreciation} onChange={setRentAppreciation} min={0} max={20} step={0.5} suffix="%" />
+                <InputGroup label="Diff. Return %" value={investmentReturn} onChange={setInvestmentReturn} min={1} max={25} step={0.5} suffix="%" />
+              </div>
             </div>
           </Card>
 
-          <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl border border-indigo-100 dark:border-indigo-900/30 flex items-start gap-3">
-             <Info className="text-indigo-600 dark:text-indigo-400 shrink-0" size={18} />
-             <p className="text-xs text-indigo-800 dark:text-indigo-300 leading-relaxed">
-                The "Rent" scenario assumes you invest your Down Payment + the monthly difference between EMI and Rent at {investmentReturn}% CAGR.
-             </p>
-          </div>
+          <button 
+            onClick={handleSave}
+            className="w-full py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-all font-bold text-xs shadow-xs"
+          >
+            Add to Comparison Board
+          </button>
         </div>
 
-        {/* Right: Results & Comparison */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <StatBox 
-                label={`Net Worth (Buying) - Yr ${tenure}`} 
-                value={formatCurrency(results.netWorthBuy)} 
-                colorClass="text-indigo-600 dark:text-indigo-400" 
-                subValue={`Asset: ${formatCurrency(results.finalPropertyValue)}`}
-            />
-            <StatBox 
-                label={`Net Worth (Renting) - Yr ${tenure}`} 
-                value={formatCurrency(results.netWorthRent)} 
-                colorClass="text-rose-500 dark:text-rose-400" 
-                subValue="Includes invested principal + savings"
-            />
-          </div>
-
-          <Card title="Wealth Trajectory: 30 Year Comparison">
-            <div className="h-80 w-full mt-4">
+        <div className="lg:col-span-7">
+          <Card 
+            title="30-Year Wealth Trajectory"
+            action={
+              <button
+                onClick={handleExportCSV}
+                className="flex items-center gap-1 px-2.5 py-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded text-[11px] font-bold transition-all"
+                title="Download CSV"
+              >
+                <Download size={12} />
+                <span>Export CSV</span>
+              </button>
+            }
+          >
+            <div className="h-64 sm:h-72 w-full mt-1">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={trajectoryData} margin={{ top: 10, right: 30, left: 20, bottom: 0 }}>
+                <LineChart data={trajectoryData} margin={{ top: 10, right: 15, left: -10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" className="dark:opacity-10" />
                   <XAxis dataKey="year" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10}} />
                   <YAxis 
                     axisLine={false} 
                     tickLine={false} 
                     tick={{fill: '#94a3b8', fontSize: 10}} 
-                    tickFormatter={(val) => `₹${(val / 10000000).toFixed(1)}Cr`}
+                    tickFormatter={(val) => `₹${(val / 10000000).toFixed(0)}Cr`}
                   />
                   <Tooltip 
                     formatter={(value: number) => formatCurrency(value)}
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', background: '#1e293b', color: '#fff' }}
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', background: '#1e293b', color: '#fff', fontSize: '11px', padding: '6px 10px' }}
                   />
-                  <Legend verticalAlign="top" height={36} />
+                  <Legend verticalAlign="top" height={32} iconType="circle" wrapperStyle={{ fontSize: '11px' }} />
                   <Line 
                     name="Buy Path (Net Asset)" 
                     type="monotone" 
                     dataKey="buyNetWorth" 
                     stroke="#6366f1" 
-                    strokeWidth={3} 
-                    dot={{ r: 4, fill: '#6366f1' }}
-                    activeDot={{ r: 6 }} 
+                    strokeWidth={2.5} 
+                    dot={{ r: 3, fill: '#6366f1' }}
+                    activeDot={{ r: 5 }} 
                   />
                   <Line 
                     name="Rent Path (Invested Corpus)" 
                     type="monotone" 
                     dataKey="rentNetWorth" 
                     stroke="#f43f5e" 
-                    strokeWidth={3} 
-                    dot={{ r: 4, fill: '#f43f5e' }}
-                    activeDot={{ r: 6 }} 
+                    strokeWidth={2.5} 
+                    dot={{ r: 3, fill: '#f43f5e' }}
+                    activeDot={{ r: 5 }} 
                   />
                   {breakEvenYear && tenure > breakEvenYear && (
-                    <ReferenceLine x={`Year ${Math.floor(breakEvenYear / 5) * 5}`} stroke="#10b981" strokeDasharray="3 3" label={{ position: 'top', value: 'Break-even Zone', fill: '#10b981', fontSize: 10 }} />
+                    <ReferenceLine x={`Yr ${Math.floor(breakEvenYear / 5) * 5}`} stroke="#10b981" strokeDasharray="3 3" label={{ position: 'top', value: 'Break-even', fill: '#10b981', fontSize: 10 }} />
                   )}
                 </LineChart>
               </ResponsiveContainer>
             </div>
           </Card>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className={`p-6 rounded-2xl border transition-all ${results.netWorthBuy > results.netWorthRent ? 'bg-indigo-50 border-indigo-100 dark:bg-indigo-900/10 dark:border-indigo-900/30' : 'bg-rose-50 border-rose-100 dark:bg-rose-900/10 dark:border-rose-900/30'}`}>
-                <div className="flex items-center gap-3 mb-3">
-                    <div className={`p-2 rounded-lg ${results.netWorthBuy > results.netWorthRent ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400' : 'bg-rose-100 text-rose-600 dark:bg-rose-900/40 dark:text-rose-400'}`}>
-                        {results.netWorthBuy > results.netWorthRent ? <Home size={20} /> : <ArrowRightLeft size={20} />}
-                    </div>
-                    <h4 className="font-bold text-slate-800 dark:text-slate-100">Decision Outcome</h4>
-                </div>
-                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                    At the end of {tenure} years, <strong>{results.netWorthBuy > results.netWorthRent ? 'Buying' : 'Renting'}</strong> leads to a higher net worth by 
-                    <span className="font-bold mx-1 text-slate-900 dark:text-white">{formatCurrency(Math.abs(results.netWorthBuy - results.netWorthRent))}</span>.
-                </p>
-            </div>
-
-            <div className="p-6 bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-900/30 rounded-2xl">
-                <div className="flex items-center gap-3 mb-3">
-                    <div className="p-2 bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400 rounded-lg">
-                        <TrendingUp size={20} />
-                    </div>
-                    <h4 className="font-bold text-slate-800 dark:text-slate-100">Break-even Point</h4>
-                </div>
-                <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                    {breakEvenYear 
-                        ? `Buying this property typically becomes more profitable than renting after Year ${breakEvenYear}.` 
-                        : "With these settings, Renting remains more financially viable over the entire 30-year period."}
-                </p>
-            </div>
-          </div>
         </div>
       </div>
     </div>

@@ -1,8 +1,7 @@
-
 import React, { useState, useMemo } from 'react';
 import { Card, InputGroup, StatBox } from '../components/Shared';
 import { formatCurrency } from '../utils/finance';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { 
   Wallet, 
   Coins, 
@@ -11,7 +10,9 @@ import {
   TrendingUp, 
   Activity, 
   Scale,
-  CheckCircle2
+  CheckCircle2,
+  ShieldCheck,
+  AlertTriangle
 } from 'lucide-react';
 
 const AssetAllocationModule: React.FC = () => {
@@ -23,7 +24,7 @@ const AssetAllocationModule: React.FC = () => {
   const [stocks, setStocks] = useState(750000);
 
   const assets = useMemo(() => [
-    { name: 'Cash/FD', value: cash, color: '#6366f1', icon: Wallet },
+    { name: 'Cash / FD', value: cash, color: '#6366f1', icon: Wallet },
     { name: 'Gold', value: gold, color: '#f59e0b', icon: Coins },
     { name: 'Silver', value: silver, color: '#94a3b8', icon: Gem },
     { name: 'Real Estate', value: realEstate, color: '#10b981', icon: Home },
@@ -32,147 +33,150 @@ const AssetAllocationModule: React.FC = () => {
   ], [cash, gold, silver, realEstate, mutualFunds, stocks]);
 
   const totalNetWorth = useMemo(() => 
-    assets.reduce((sum, asset) => sum + asset.value, 0), [assets]
+    assets.reduce((sum, asset) => sum + asset.value, 0) || 1, [assets]
   );
 
   const equityExposure = useMemo(() => 
     ((stocks + mutualFunds) / totalNetWorth) * 100, [stocks, mutualFunds, totalNetWorth]
   );
 
-  return (
-    <div className="space-y-8 max-w-6xl mx-auto pb-12">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Inputs */}
-        <div className="lg:col-span-1 space-y-6">
-          <Card title="Current Assets">
-            <div className="space-y-5">
-              <InputGroup label="Cash & Bank / FD" value={cash} onChange={setCash} min={0} max={10000000} step={10000} prefix="₹" />
-              <InputGroup label="Gold" value={gold} onChange={setGold} min={0} max={5000000} step={5000} prefix="₹" />
-              <InputGroup label="Silver" value={silver} onChange={setSilver} min={0} max={1000000} step={1000} prefix="₹" />
-              <InputGroup label="Real Estate" value={realEstate} onChange={setRealEstate} min={0} max={100000000} step={100000} prefix="₹" />
-              <InputGroup label="Mutual Funds" value={mutualFunds} onChange={setMutualFunds} min={0} max={50000000} step={10000} prefix="₹" />
-              <InputGroup label="Direct Stocks" value={stocks} onChange={setStocks} min={0} max={50000000} step={10000} prefix="₹" />
-            </div>
-          </Card>
+  const safeExposure = useMemo(() => 
+    ((cash + gold + silver) / totalNetWorth) * 100, [cash, gold, silver, totalNetWorth]
+  );
 
-          <div className="p-5 bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-2xl text-white shadow-xl">
-             <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-white/10 rounded-lg">
-                    <Scale size={20} />
-                </div>
-                <h4 className="font-bold">Diversification Tip</h4>
-             </div>
-             <p className="text-xs text-indigo-100 leading-relaxed">
-                A common rule of thumb is "100 minus your age" for equity allocation. If you are 30, having 70% in stocks/MFs is considered healthy for growth.
-             </p>
+  return (
+    <div className="space-y-3.5 max-w-7xl mx-auto pb-4">
+      {/* Top Row: Sleek Summary Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="sm:col-span-2 p-3.5 bg-gradient-to-r from-slate-900 to-indigo-950 dark:from-slate-900 dark:to-slate-950 rounded-xl border border-slate-800 text-white flex items-center justify-between shadow-xs">
+          <div>
+            <p className="text-[10px] font-bold text-indigo-300 uppercase tracking-wider">Combined Net Worth</p>
+            <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-white mt-0.5">
+              {formatCurrency(totalNetWorth)}
+            </h3>
+            <p className="text-[10px] text-slate-400 mt-1 flex items-center gap-1 font-medium">
+              <CheckCircle2 size={12} className="text-emerald-400" />
+              Spread across {assets.filter(a => a.value > 0).length} asset classes
+            </p>
+          </div>
+          <div className="hidden sm:block p-2.5 bg-white/10 rounded-xl backdrop-blur-md">
+            <Scale size={24} className="text-indigo-300" />
           </div>
         </div>
 
-        {/* Results & Visuals */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="col-span-1 sm:col-span-2 p-8 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col items-center text-center">
-                <p className="text-sm font-medium text-slate-500 uppercase tracking-widest mb-2">Total Combined Net Worth</p>
-                <h3 className="text-5xl md:text-6xl font-black text-slate-900 dark:text-white transition-colors">
-                    {formatCurrency(totalNetWorth)}
-                </h3>
-                <div className="mt-4 flex items-center gap-2 text-emerald-500 font-bold bg-emerald-50 dark:bg-emerald-900/20 px-4 py-1.5 rounded-full text-xs">
-                    <CheckCircle2 size={14} />
-                    Tracked across {assets.filter(a => a.value > 0).length} asset classes
-                </div>
+        <StatBox 
+          label="Equity Exposure" 
+          value={`${equityExposure.toFixed(1)}%`} 
+          subValue={`Stocks + MFs (${formatCurrency(stocks + mutualFunds)})`}
+          colorClass={equityExposure > 50 ? "text-indigo-600 dark:text-indigo-400" : "text-amber-500"}
+          icon={<TrendingUp size={16} />}
+        />
+
+        <StatBox 
+          label="Safe / Liquid Assets" 
+          value={`${safeExposure.toFixed(1)}%`} 
+          subValue={`Cash & Metals (${formatCurrency(cash + gold + silver)})`}
+          colorClass="text-emerald-600 dark:text-emerald-400"
+          icon={<ShieldCheck size={16} />}
+        />
+      </div>
+
+      {/* Main Grid: Inputs on Left, Analytics on Right */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5">
+        {/* Left: 6 Assets in a 2-column compact grid */}
+        <div className="lg:col-span-7">
+          <Card title="Asset Portfolio Values">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3">
+              <InputGroup label="Cash & Bank / FD" value={cash} onChange={setCash} min={0} max={10000000} step={10000} prefix="₹" />
+              <InputGroup label="Gold" value={gold} onChange={setGold} min={0} max={5000000} step={5000} prefix="₹" />
+              <InputGroup label="Silver" value={silver} onChange={setSilver} min={0} max={1000000} step={1000} prefix="₹" />
+              <InputGroup label="Real Estate" value={realEstate} onChange={setRealEstate} min={0} max={50000000} step={100000} prefix="₹" />
+              <InputGroup label="Mutual Funds" value={mutualFunds} onChange={setMutualFunds} min={0} max={30000000} step={10000} prefix="₹" />
+              <InputGroup label="Direct Stocks" value={stocks} onChange={setStocks} min={0} max={30000000} step={10000} prefix="₹" />
             </div>
 
-            <StatBox 
-              label="Equity Exposure" 
-              value={`${equityExposure.toFixed(1)}%`} 
-              subValue="Stocks + Mutual Funds"
-              colorClass={equityExposure > 60 ? "text-indigo-600 dark:text-indigo-400" : "text-amber-500"}
-            />
-            <StatBox 
-              label="Safe Assets" 
-              value={`${((cash + gold + silver) / totalNetWorth * 100).toFixed(1)}%`} 
-              subValue="Cash + Precious Metals"
-            />
-          </div>
-
-          <Card title="Allocation Pie Chart">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                <div className="h-72 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                            <Pie
-                                data={assets.filter(a => a.value > 0)}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={70}
-                                outerRadius={90}
-                                paddingAngle={5}
-                                dataKey="value"
-                                stroke="none"
-                            >
-                                {assets.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color} />
-                                ))}
-                            </Pie>
-                            <Tooltip 
-                                formatter={(val: number) => formatCurrency(val)}
-                                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                            />
-                            <Legend layout="vertical" align="right" verticalAlign="middle" iconType="circle" />
-                        </PieChart>
-                    </ResponsiveContainer>
-                </div>
-                
-                <div className="space-y-4">
-                    <h5 className="font-bold text-slate-700 dark:text-slate-200 text-sm">Asset Breakdown</h5>
-                    <div className="space-y-2">
-                        {assets.map(asset => (
-                            <div key={asset.name} className="flex items-center justify-between group">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: asset.color }} />
-                                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">{asset.name}</span>
-                                </div>
-                                <div className="text-right">
-                                    <p className="text-xs font-bold text-slate-800 dark:text-slate-200">{formatCurrency(asset.value)}</p>
-                                    <p className="text-[10px] text-slate-400">({((asset.value / totalNetWorth) * 100).toFixed(1)}%)</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+            <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+              <span className="flex items-center gap-1.5 font-medium">
+                <Scale size={14} className="text-indigo-500" />
+                Rule of Thumb: (100 - Age)% suggested in equities.
+              </span>
+              <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                Active Portfolio
+              </span>
             </div>
           </Card>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-5 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800">
-                <h4 className="font-bold text-slate-800 dark:text-slate-200 text-sm mb-3">Liquidity Analysis</h4>
-                <div className="space-y-3">
-                    <div className="flex justify-between items-center text-xs">
-                        <span className="text-slate-500">Instant Access (Cash)</span>
-                        <span className="font-bold text-indigo-600">{((cash / totalNetWorth) * 100).toFixed(1)}%</span>
+        {/* Right: Pie Chart and Breakdown + Risk Gauges */}
+        <div className="lg:col-span-5 space-y-3.5">
+          <Card title="Asset Allocation Breakdown">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 items-center">
+              <div className="h-44 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={assets.filter(a => a.value > 0)}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={48}
+                      outerRadius={68}
+                      paddingAngle={3}
+                      dataKey="value"
+                      stroke="none"
+                    >
+                      {assets.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      formatter={(val: number) => formatCurrency(val)}
+                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '11px', padding: '6px 10px' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="space-y-1.5 pr-1">
+                {assets.map(asset => {
+                  const pct = ((asset.value / totalNetWorth) * 100).toFixed(1);
+                  return (
+                    <div key={asset.name} className="flex items-center justify-between text-xs py-0.5">
+                      <div className="flex items-center gap-1.5 truncate">
+                        <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: asset.color }} />
+                        <span className="text-[11px] font-medium text-slate-600 dark:text-slate-300 truncate">{asset.name}</span>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200">{pct}%</span>
+                      </div>
                     </div>
-                    <div className="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
-                        <div className="bg-indigo-600 h-full" style={{ width: `${(cash / totalNetWorth) * 100}%` }} />
-                    </div>
-                    <p className="text-[10px] text-slate-400 italic">High liquidity is good for emergencies but may lower long-term growth.</p>
-                </div>
+                  );
+                })}
+              </div>
             </div>
-            
-            <div className="p-5 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800">
-                <h4 className="font-bold text-slate-800 dark:text-slate-200 text-sm mb-3">Volatility Risk</h4>
-                <div className="space-y-3">
-                    <div className="flex justify-between items-center text-xs">
-                        <span className="text-slate-500">Market Dependent (Equity)</span>
-                        <span className="font-bold text-rose-500">{equityExposure.toFixed(1)}%</span>
-                    </div>
-                    <div className="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
-                        <div className="bg-rose-500 h-full" style={{ width: `${equityExposure}%` }} />
-                    </div>
-                    <p className="text-[10px] text-slate-400 italic">Higher equity means higher potential returns but higher short-term fluctuations.</p>
+
+            {/* Compact Liquidity & Volatility Risk Meters */}
+            <div className="grid grid-cols-2 gap-2.5 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <div className="p-2 bg-slate-50 dark:bg-slate-800/40 rounded-lg">
+                <div className="flex justify-between items-center text-[10px] mb-1">
+                  <span className="text-slate-500 font-bold uppercase">Liquidity (Cash)</span>
+                  <span className="font-bold text-indigo-600">{((cash / totalNetWorth) * 100).toFixed(1)}%</span>
                 </div>
+                <div className="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+                  <div className="bg-indigo-600 h-full" style={{ width: `${Math.min(100, (cash / totalNetWorth) * 100)}%` }} />
+                </div>
+              </div>
+
+              <div className="p-2 bg-slate-50 dark:bg-slate-800/40 rounded-lg">
+                <div className="flex justify-between items-center text-[10px] mb-1">
+                  <span className="text-slate-500 font-bold uppercase">Market Equity</span>
+                  <span className="font-bold text-rose-500">{equityExposure.toFixed(1)}%</span>
+                </div>
+                <div className="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+                  <div className="bg-rose-500 h-full" style={{ width: `${Math.min(100, equityExposure)}%` }} />
+                </div>
+              </div>
             </div>
-          </div>
+          </Card>
         </div>
       </div>
     </div>
