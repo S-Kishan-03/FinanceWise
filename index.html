@@ -1,0 +1,97 @@
+
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FinWise | India's #1 FIRE, SIP & Home Loan Calculator</title>
+    <meta name="description" content="Calculate your path to Financial Independence (FIRE), compare Home Loan prepayments, and plan SIPs with FinWise. Free, advanced financial intelligence." />
+    <meta name="keywords" content="FIRE calculator India, Home Loan EMI prepayment, SIP step-up calculator, Rent vs Buy India, Financial Independence calculator" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
+            animation: {
+              'glow': 'glow 2s ease-in-out infinite alternate',
+              'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            },
+            keyframes: {
+              glow: {
+                'from': { 'box-shadow': '0 0 5px rgba(99, 102, 241, 0.2), 0 0 10px rgba(99, 102, 241, 0.2)' },
+                'to': { 'box-shadow': '0 0 20px rgba(99, 102, 241, 0.6), 0 0 30px rgba(99, 102, 241, 0.4)' },
+              }
+            }
+          },
+        },
+      }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+      body { font-family: 'Inter', sans-serif; }
+      html, body { 
+        height: 100%; 
+        margin: 0; 
+        transition: background-color 0.5s ease;
+      }
+      
+      /* Soft Tinted Gradient Backgrounds */
+      body { 
+        background-color: #ebf0f7;
+        background-image: 
+          radial-gradient(at 0% 0%, rgba(218, 228, 253, 0.85) 0px, transparent 50%), 
+          radial-gradient(at 100% 0%, rgba(235, 225, 255, 0.75) 0px, transparent 50%),
+          radial-gradient(at 50% 40%, rgba(240, 244, 250, 0.9) 0px, transparent 65%),
+          radial-gradient(at 100% 100%, rgba(218, 238, 254, 0.7) 0px, transparent 50%),
+          radial-gradient(at 0% 100%, rgba(230, 234, 255, 0.8) 0px, transparent 50%);
+        background-attachment: fixed;
+      }
+      
+      .dark body { 
+        background-color: #020617;
+        background-image: 
+          radial-gradient(at 0% 0%, hsla(243, 75%, 15%, 1) 0, transparent 50%), 
+          radial-gradient(at 100% 0%, hsla(263, 70%, 10%, 1) 0, transparent 50%),
+          radial-gradient(at 50% 100%, hsla(243, 75%, 12%, 1) 0, transparent 50%);
+        background-attachment: fixed;
+      }
+
+      ::-webkit-scrollbar { width: 6px; height: 6px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+      .dark ::-webkit-scrollbar-thumb { background: #1e293b; }
+      
+      .glass-card { 
+        background: rgba(255, 255, 255, 0.7); 
+        backdrop-filter: blur(16px); 
+        border: 1px solid rgba(255, 255, 255, 0.4); 
+      }
+      .dark .glass-card { 
+        background: rgba(15, 23, 42, 0.6); 
+        border: 1px solid rgba(255, 255, 255, 0.05); 
+      }
+    </style>
+
+<link rel="stylesheet" href="/index.css">
+  <script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "recharts": "https://esm.sh/recharts@^3.6.0",
+    "@google/genai": "https://esm.sh/@google/genai@^1.35.0"
+  }
+}
+</script>
+  <script type="module" crossorigin src="/FinanceWise/assets/index-DHYWWg6S.js"></script>
+</head>
+  <body class="antialiased">
+    <div id="root" class="h-full"></div>
+</body>
+</html>
